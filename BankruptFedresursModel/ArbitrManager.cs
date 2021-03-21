@@ -1,15 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace BankruptFedresursModel
 {
     /// <summary>
-    /// Должник.
+    /// Арбитражный управляющий.
     /// </summary>
-    public class Debtor
+    public class ArbitrManager
     {
         /// <summary>
         /// ФИО.
