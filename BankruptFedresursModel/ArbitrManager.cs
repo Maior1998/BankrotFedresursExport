@@ -10,5 +10,10 @@ namespace BankruptFedresursModel
         /// ФИО.
         /// </summary>
         public string FullName { get; set; }
+
+        public override string ToString()
+        {
+            return FullName;
+        }
     }
 }

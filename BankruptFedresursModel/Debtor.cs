@@ -15,5 +15,14 @@ namespace BankruptFedresursModel
         /// ФИО.
         /// </summary>
         public string FullName { get; set; }
+        /// <summary>
+        /// Дата рождения.
+        /// </summary>
+        public DateTime BirthDate { get; set; }
+
+        public override string ToString()
+        {
+            return FullName;
+        }
     }
 }

@@ -46,6 +46,11 @@ namespace BankruptFedresursModel
         /// Тип сообщения.
         /// </summary>
         public DebtorMessageType Type { get; set; }
+
+        public override string ToString()
+        {
+            return Guid;
+        }
     }
 
     public class DebtorMessageType
@@ -56,5 +61,10 @@ namespace BankruptFedresursModel
         public int Id { get; set; }
 
         public string Name { get; set; }
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }
