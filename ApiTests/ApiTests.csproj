@@ -5,4 +5,24 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.Private.ServiceModel" Version="4.8.1" />
+    <PackageReference Include="System.ServiceModel.Duplex" Version="4.8.1" />
+    <PackageReference Include="System.ServiceModel.Http" Version="4.8.1" />
+    <PackageReference Include="System.ServiceModel.NetTcp" Version="4.8.1" />
+    <PackageReference Include="System.ServiceModel.Primitives" Version="4.8.1" />
+    <PackageReference Include="System.ServiceModel.Security" Version="4.8.1" />
+    <PackageReference Include="System.ServiceModel.Syndication" Version="6.0.0-preview.2.21154.6" />
+    <PackageReference Include="Selenium.WebDriver" Version="3.141.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Connected Services\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BankruptFedresursClient\BankruptFedresursClient.csproj" />
+    <ProjectReference Include="..\BankruptFedresursModel\BankruptFedresursModel.csproj" />
+  </ItemGroup>
+
 </Project>
