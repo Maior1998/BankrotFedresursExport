@@ -19,14 +19,13 @@ namespace ApiTests
 {
     class Program
     {
-        private const int ИндексРеализацииИмущества = 19;
-        private const int ИндексРеструктуризацииДолгов = 18;
+        
         static void Main(string[] args)
         {
             DebtorMessage[] messages = BankrotClient.GetMessages(
-                DateTime.Today.AddDays(0),
-                DateTime.Today.AddDays(1),
-                ИндексРеализацииИмущества);
+                DateTime.Today.AddDays(-2),
+                DateTime.Today.AddDays(-2),
+                BankrotClient.SupportedMessageTypes.First());
             MemoryStream stream = BankrotClient.ExportMessagesToExcel(messages);
             File.WriteAllBytes("output.xlsx", stream.ToArray());
             stream.Close();
