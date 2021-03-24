@@ -1,19 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-
+using System.Windows.Forms;
 using DevExpress.Mvvm;
-
-using Microsoft.Win32;
-
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using BankruptFedresursClient;
 using BankruptFedresursModel;
+using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
 namespace BankrotFedresursExport
 {
@@ -21,7 +20,7 @@ namespace BankrotFedresursExport
 	{
 		public MainViewModel()
 		{	//значение строки задается в переменную, но при запуске не отображается
-			SelectedMessageType = MessageTypes.First().ToString();
+			SelectedMessageType = MessageTypes.First();
 		}
 
 		[Reactive] public DateTime DateFrom { get; set; } = DateTime.Today;
@@ -29,14 +28,21 @@ namespace BankrotFedresursExport
 
 		public DebtorMessageType[] MessageTypes { get; set; } = BankrotClient.SupportedMessageTypes;
 
-		[Reactive] public string SelectedMessageType { get; set; }
+		[Reactive] public DebtorMessageType SelectedMessageType { get; set; }
 
 		private DelegateCommand save;
 
 		public DelegateCommand Save => save ??= new DelegateCommand(
 			() =>
 			{
-				SaveFileDialog saveFileDialog = new();
+				SaveFileDialog saveFileDialog = new()
+				{
+					AddExtension = true,
+					DefaultExt = "xlsx",
+					Filter = "Таблица Microsoft Excel|*.xlsx|Все файлы|*.*",
+					FileName = $"({DateTime.Today.ToShortDateString()}) - {SelectedMessageType}"
+				};
+
 				IsLoading = true;
 				if (!saveFileDialog.ShowDialog().Value)
 				{
@@ -44,8 +50,25 @@ namespace BankrotFedresursExport
 					return;
 				}
 				string filePath = saveFileDialog.FileName;
-				IsLoading = false;
-				Console.WriteLine();
+				
+				Task.Run(() =>
+				{
+					try
+					{
+
+						MemoryStream memoryStream =
+							BankrotClient.ExportMessagesToExcel(BankrotClient.GetMessages(DateFrom, DateTo, SelectedMessageType));
+						File.WriteAllBytes(filePath, memoryStream.ToArray());
+						MessageBox.Show("Файл записан.", "Успех");
+					}
+					catch (Exception e)
+					{
+						MessageBox.Show(e.Message);
+						throw;
+					}
+					finally{ IsLoading = false; }
+				});
+
 			}, () =>
 			{
 				return SelectedMessageType != null;
