@@ -6,12 +6,12 @@ using NUnit.Framework;
 
 namespace Tests
 {
+    [TestFixture]
     public class Tests
     {
         [SetUp]
         public void Setup()
-        {
-        }
+        { }
 
         [Test]
         public void SimpleDateFilterTest()
@@ -32,5 +32,22 @@ namespace Tests
                 Assert.LessOrEqual(messages.Select(x => x.DatePublished.Date).Max(), to);
             }
         }
+        [Test]
+        public void TestGetMessages()
+        {
+            var start = new DateTime(2021, 3, 1);
+            var end = new DateTime(2021, 3, 1);
+            var type = new DebtorMessageType(){Id = 19, Name = "Реализация имущества должника-банкрота"};
+            var leng = 727;
+
+            DebtorMessage[] messages = BankrotClient.GetMessages(start, end, type);
+            Assert.AreEqual(leng, messages.Length);
+        }
+        [Test]
+        public void TestExportMessagesToExcel()
+        {
+
+        }
+
     }
 }
