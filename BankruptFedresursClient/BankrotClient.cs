@@ -9,6 +9,7 @@ using System.Threading;
 using BankruptFedresursModel;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
+using OfficeOpenXml.Table;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
@@ -25,6 +26,10 @@ namespace BankruptFedresursClient
 
         public static DebtorMessage[] GetMessages(DateTime start, DateTime end, int messageTypeId)
         {
+            if (end < start)
+            {
+                throw new Exception("Дата конца поиска не может быть раньше даты начала!");
+            }
             if ((end - start).Days > 30)
             {
                 throw new InvalidOperationException("Максимальная длина интервала - 30 дней!");
@@ -69,25 +74,25 @@ namespace BankruptFedresursClient
             input.Click();
             Thread.Sleep(rand.Next(500, 2000));
 
-            
 
-            
 
-            
 
-            
+
+
+
+
             List<DebtorMessage> messages = new List<DebtorMessage>();
 
             int curPage = 1;
             do
             {
-                
-                    Console.WriteLine();
-                    js.ExecuteScript($"theForm.__EVENTTARGET.value = 'ctl00$cphBody$gvMessages';");
-                    js.ExecuteScript($"theForm.__EVENTARGUMENT.value = 'Page${curPage}';");
-                    js.ExecuteScript($"theForm.submit();");
-                    WaitForAjax(driver);
-                    Thread.Sleep(rand.Next(300, 1001));
+
+                Console.WriteLine();
+                js.ExecuteScript($"theForm.__EVENTTARGET.value = 'ctl00$cphBody$gvMessages';");
+                js.ExecuteScript($"theForm.__EVENTARGUMENT.value = 'Page${curPage}';");
+                js.ExecuteScript($"theForm.submit();");
+                WaitForAjax(driver);
+                Thread.Sleep(rand.Next(300, 1001));
                 bool isSearchSuccess = !driver.PageSource.Contains(
                 "По заданным критериям не найдено ни одной записи. Уточните критерии поиска");
                 if (!isSearchSuccess)
@@ -96,7 +101,7 @@ namespace BankruptFedresursClient
                     //Если поиск не дал результатов
                     break;
                 }
-                
+
                 IWebElement table = driver.FindElement(By.Id("ctl00_cphBody_gvMessages"));
                 ReadOnlyCollection<IWebElement> rows = table.FindElements(By.TagName("tr"));
                 foreach (IWebElement row in rows)
@@ -128,6 +133,7 @@ namespace BankruptFedresursClient
                     messages.Add(buffer);
                 }
                 curPage++;
+                
             } while (true);
 
             DebtorMessage[] resultArray = messages.ToArray();
@@ -171,7 +177,7 @@ namespace BankruptFedresursClient
                 WebDriverWait wait = new(driver, new TimeSpan(0, 0, 10));
                 driver.Navigate();
                 var element = wait.Until(driver => driver.FindElement(By.ClassName("even")));
-                Thread.Sleep(rand.Next(1500, 15000));
+                Thread.Sleep(rand.Next(2500,5000));
 
                 ReadOnlyCollection<IWebElement> rows = driver.FindElements(By.TagName("tr"));
 
@@ -196,6 +202,7 @@ namespace BankruptFedresursClient
                 {
                     throw new Exception("Дата рождения не найдена!");
                 }
+                
             }
             Console.WriteLine();
 
@@ -210,6 +217,7 @@ namespace BankruptFedresursClient
             {
                 sheet.Column(i + 1).Style.Numberformat.Format = columns[i].ColumnFormat;
                 sheet.Cells[1, i + 1].Value = columns[i].Header;
+                sheet.Cells[1, i + 1].Style.Border.BorderAround(ExcelBorderStyle.Thick);
             }
             int currentRowIndex = 0;
             foreach (DebtorMessage message in messages)
@@ -220,6 +228,12 @@ namespace BankruptFedresursClient
                 }
                 currentRowIndex++;
             }
+            sheet.Cells[sheet.Dimension.Address].AutoFitColumns();
+
+            ExcelRange range = sheet.Cells[1, 1, sheet.Dimension.End.Row, sheet.Dimension.End.Column];
+            ExcelTable tab = sheet.Tables.Add(range, "Table1");
+            tab.TableStyle = TableStyles.Light16;
+
             MemoryStream stream = new MemoryStream();
             excelPackage.SaveAs(stream);
             return stream;
@@ -228,7 +242,7 @@ namespace BankruptFedresursClient
         private static readonly DebtorMessageExcelExportColumn[] columns = new DebtorMessageExcelExportColumn[]
         {
             new DebtorMessageExcelExportColumn(
-                "Дата публикации",
+                "Дата публикации (МСК)",
                 message => message.DatePublished,
                 "dd.mm.yyyy"),
 
@@ -241,17 +255,17 @@ namespace BankruptFedresursClient
                 message => message.Debtor.FullName),
 
             new DebtorMessageExcelExportColumn(
+                "Дата рождения",
+                message => message.Debtor.BirthDate,
+                "dd.mm.yyyy"),
+
+            new DebtorMessageExcelExportColumn(
                 "Адрес",
                 message => message.Address),
 
             new DebtorMessageExcelExportColumn(
                 "Кем опубликовано",
                 message => message.Owner.FullName),
-
-            new DebtorMessageExcelExportColumn(
-                "Дата рождения",
-                message => message.Debtor.BirthDate,
-                "dd.mm.yyyy"),
         };
 
         private class DebtorMessageExcelExportColumn
@@ -259,7 +273,6 @@ namespace BankruptFedresursClient
             /// <summary>
             /// Создает новый столбец 
             /// </summary>
-            /// <param name="expression"></param>
             public DebtorMessageExcelExportColumn(
                 string header,
                 Expression<Func<DebtorMessage, object>> expression,

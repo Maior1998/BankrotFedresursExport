@@ -23,8 +23,8 @@ namespace ApiTests
         static void Main(string[] args)
         {
             DebtorMessage[] messages = BankrotClient.GetMessages(
-                DateTime.Today.AddDays(-2),
-                DateTime.Today.AddDays(-2),
+                DateTime.Today,
+                DateTime.Today,
                 BankrotClient.SupportedMessageTypes.First());
             MemoryStream stream = BankrotClient.ExportMessagesToExcel(messages);
             File.WriteAllBytes("output.xlsx", stream.ToArray());

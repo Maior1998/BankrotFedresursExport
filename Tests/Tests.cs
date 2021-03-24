@@ -31,6 +31,7 @@ namespace Tests
                 Assert.GreaterOrEqual(messages.Select(x => x.DatePublished.Date).Min(), from);
                 Assert.LessOrEqual(messages.Select(x => x.DatePublished.Date).Max(), to);
             }
+
         }
     }
 }
