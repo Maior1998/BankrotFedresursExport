@@ -19,11 +19,29 @@ namespace BankruptFedresursClient
     public static class BankrotClient
     {
 
+        /// <summary>
+        /// Получает массив сообщений по должникам при помощи фильтров:
+        /// интервал публикации сообщения (дата-начало, дата-конец),
+        /// а также фильтр по типу опубликуемого арбитражным управляющим сообщения.
+        /// </summary>
+        /// <param name="start">Дата-начало фильтра по дате публикации сообщения.</param>
+        /// <param name="end">Дата-конец фильтра по дате публикации сообщения.</param>
+        /// <param name="type">Объект типа сообщения суда, которое необходимо вытащить.</param>
+        /// <returns>Массив сообщений по должникам с учетом фильтров по дате публикации и типу сообщения.</returns>
         public static DebtorMessage[] GetMessages(DateTime start, DateTime end, DebtorMessageType type)
         {
             return GetMessages(start, end, type.Id);
         }
 
+        /// <summary>
+        /// Получает массив сообщений по должникам при помощи фильтров:
+        /// интервал публикации сообщения (дата-начало, дата-конец),
+        /// а также фильтр по типу опубликуемого арбитражным управляющим сообщения.
+        /// </summary>
+        /// <param name="start">Дата-начало фильтра по дате публикации сообщения.</param>
+        /// <param name="end">Дата-конец фильтра по дате публикации сообщения.</param>
+        /// <param name="messageTypeId">Номер типа сообщения суда, которое необходимо вытащить.</param>
+        /// <returns>Массив сообщений по должникам с учетом фильтров по дате публикации и типу сообщения.</returns>
         public static DebtorMessage[] GetMessages(DateTime start, DateTime end, int messageTypeId)
         {
             if (end < start)
@@ -133,7 +151,7 @@ namespace BankruptFedresursClient
                     messages.Add(buffer);
                 }
                 curPage++;
-                
+
             } while (true);
 
             DebtorMessage[] resultArray = messages.ToArray();
@@ -141,17 +159,26 @@ namespace BankruptFedresursClient
             return resultArray;
         }
 
+        /// <summary>
+        /// Забирает управление на время ожидания
+        /// выполнения всех Ajax запросов указанным драйвером браузера.
+        /// </summary>
+        /// <param name="driver">Драйвер, Ajax запросы которого необходимо подождать.</param>
         private static void WaitForAjax(IWebDriver driver)
         {
-            while (true) // Handle timeout somewhere
+            IJavaScriptExecutor js = (driver as IJavaScriptExecutor);
+            while (true)
             {
-                var ajaxIsComplete = (bool)(driver as IJavaScriptExecutor).ExecuteScript("return jQuery.active == 0");
+                var ajaxIsComplete = (bool)js.ExecuteScript("return jQuery.active == 0");
                 if (ajaxIsComplete)
                     break;
                 Thread.Sleep(100);
             }
         }
 
+        /// <summary>
+        /// Массив (только для чтения) поддерживаемых типов вытаскиваемых сообщений.
+        /// </summary>
         public static readonly DebtorMessageType[] SupportedMessageTypes = new[]
         {
             new DebtorMessageType()
@@ -168,6 +195,11 @@ namespace BankruptFedresursClient
         };
         private static Random rand = new Random();
         private const string baseMessageViewUrl = @"https://bankrot.fedresurs.ru/MessageWindow.aspx?ID=";
+        /// <summary>
+        /// Производит заполнение даты рождения по коллекции должников при помощи указанного драйвера браузера.
+        /// </summary>
+        /// <param name="driver">Драйвер браузера, который будет использоваться при заполнении коллекции датами рождения.</param>
+        /// <param name="messages">Коллекция сообщений по должникам, в которой необходимо заполнить дату рождения.</param>
         private static void FillBirthDate(IWebDriver driver, IEnumerable<DebtorMessage> messages)
         {
             foreach (var message in messages)
@@ -177,7 +209,7 @@ namespace BankruptFedresursClient
                 WebDriverWait wait = new(driver, new TimeSpan(0, 0, 10));
                 driver.Navigate();
                 var element = wait.Until(driver => driver.FindElement(By.ClassName("even")));
-                Thread.Sleep(rand.Next(2500,5000));
+                Thread.Sleep(rand.Next(2500, 5000));
 
                 ReadOnlyCollection<IWebElement> rows = driver.FindElements(By.TagName("tr"));
 
@@ -202,12 +234,16 @@ namespace BankruptFedresursClient
                 {
                     throw new Exception("Дата рождения не найдена!");
                 }
-                
+
             }
             Console.WriteLine();
 
         }
-
+        /// <summary>
+        /// Производит экспорт коллекции сообщений по должникам в поток памяти, содержащий Excel файл.
+        /// </summary>
+        /// <param name="messages">Коллекция сообщений по должникам, которую необходимо сохранить в виде Excel файла.</param>
+        /// <returns>Поток памяти, содержащий в себе Excel файл.</returns>
         public static MemoryStream ExportMessagesToExcel(IEnumerable<DebtorMessage> messages)
         {
             ExcelPackage excelPackage = new ExcelPackage();
@@ -238,7 +274,10 @@ namespace BankruptFedresursClient
             excelPackage.SaveAs(stream);
             return stream;
         }
-
+        /// <summary>
+        /// Список столбцов (только для чтения),
+        /// которые будет обрабатывать алгоритм обработки сообщений.
+        /// </summary>
         private static readonly DebtorMessageExcelExportColumn[] columns = new DebtorMessageExcelExportColumn[]
         {
             new DebtorMessageExcelExportColumn(
@@ -267,7 +306,9 @@ namespace BankruptFedresursClient
                 "Кем опубликовано",
                 message => message.Owner.FullName),
         };
-
+        /// <summary>
+        /// Определяет объект столбца, который будет обработан алгоритмом генерации Excel файла.
+        /// </summary>
         private class DebtorMessageExcelExportColumn
         {
             /// <summary>
@@ -306,13 +347,14 @@ namespace BankruptFedresursClient
 
         static BankrotClient()
         {
+            //Установка некоммерческой лицензии использования EPPLUS,
+            //так как мы не собираемся продавать программу.
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
         }
 
         private static Regex dateRegex = new(@"(?<day>\d+)\.(?<month>\d+)\.(?<year>\d{4})");
         private static readonly Regex messagePageHrefRegex = new Regex(@"/MessageWindow\.aspx\?ID=([A-Z0-9]+)");
         private static readonly Regex datetimeRegex = new Regex(@"(?<day>\d+)\.(?<month>\d+)\.(?<year>\d{4}) (?<hours>\d+):(?<minutes>\d+):(?<seconds>\d+)");
-        private static readonly Regex pagingInfoRegex = new Regex(@"(?<start>\d+) по (?<end>\d+) \(Всего: (?<all>\d+)");
 
     }
 
