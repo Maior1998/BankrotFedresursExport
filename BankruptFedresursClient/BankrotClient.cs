@@ -21,6 +21,32 @@ namespace BankruptFedresursClient
 
         /// <summary>
         /// Получает массив сообщений по должникам при помощи фильтров:
+        /// день публикации сообщения,
+        /// а также фильтр по типу опубликуемого арбитражным управляющим сообщения.
+        /// </summary>
+        /// <param name="date">День публикации сообщения.</param>
+        /// <param name="type">Объект типа сообщения суда, которое необходимо вытащить.</param>
+        /// <returns>Массив сообщений по должникам с учетом фильтров по дате публикации и типу сообщения.</returns>
+        public static DebtorMessage[] GetMessages(DateTime date, DebtorMessageType type)
+        {
+            return GetMessages(date, type.Id);
+        }
+
+        /// <summary>
+        /// Получает массив сообщений по должникам при помощи фильтров:
+        /// день публикации сообщения,
+        /// а также фильтр по типу опубликуемого арбитражным управляющим сообщения.
+        /// </summary>
+        /// <param name="date">День публикации сообщения.</param>
+        /// <param name="type">Индекс типа сообщения суда, которое необходимо вытащить.</param>
+        /// <returns>Массив сообщений по должникам с учетом фильтров по дате публикации и типу сообщения.</returns>
+        public static DebtorMessage[] GetMessages(DateTime date, int messageTypeId)
+        {
+            return GetMessages(date, date, messageTypeId);
+        }
+
+        /// <summary>
+        /// Получает массив сообщений по должникам при помощи фильтров:
         /// интервал публикации сообщения (дата-начало, дата-конец),
         /// а также фильтр по типу опубликуемого арбитражным управляющим сообщения.
         /// </summary>
@@ -32,6 +58,8 @@ namespace BankruptFedresursClient
         {
             return GetMessages(start, end, type.Id);
         }
+
+
 
         /// <summary>
         /// Получает массив сообщений по должникам при помощи фильтров:
@@ -55,21 +83,20 @@ namespace BankruptFedresursClient
             string source = "https://bankrot.fedresurs.ru/Messages.aspx";
 
             ChromeOptions chromeOptions = new();
+#if DEBUG
+#else
+    chromeOptions.AddArgument("--headless");
+#endif
 
-            //chromeOptions.AddArgument("--headless");
             chromeOptions.AddArgument("--user-agent=Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5355d Safari/8536.25");
 
 
-            IWebDriver driver = new ChromeDriver(chromeOptions);
+            IWebDriver driver = new ChromeDriver(ClientSettings.Settings.DriverPath, chromeOptions);
             driver.Url = source;
             driver.Navigate();
             WebDriverWait wait = new(driver, new TimeSpan(0, 0, 10));
             var element = wait.Until(driver => driver.FindElement(By.Id("ctl00_cphBody_mdsMessageType_hfSelectedType")));
             Thread.Sleep(rand.Next(500, 2000));
-
-
-
-
             IJavaScriptExecutor js = driver as IJavaScriptExecutor;
             js.ExecuteScript("ctl00_cphBody_mdsMessageType_hfSelectedType.value = \"\"");
             js.ExecuteScript("ctl00_cphBody_mdsMessageType_hfSelectedValue.value = \"ArbitralDecree\"");
@@ -92,13 +119,6 @@ namespace BankruptFedresursClient
             input.Click();
             Thread.Sleep(rand.Next(500, 2000));
 
-
-
-
-
-
-
-
             List<DebtorMessage> messages = new List<DebtorMessage>();
 
             int curPage = 1;
@@ -111,9 +131,9 @@ namespace BankruptFedresursClient
                 js.ExecuteScript($"theForm.submit();");
                 WaitForAjax(driver);
                 Thread.Sleep(rand.Next(300, 1001));
-                bool isSearchSuccess = !driver.PageSource.Contains(
+                bool isSearchFailed = driver.PageSource.Contains(
                 "По заданным критериям не найдено ни одной записи. Уточните критерии поиска");
-                if (!isSearchSuccess)
+                if (isSearchFailed)
                 {
                     Thread.Sleep(rand.Next(500, 5000));
                     //Если поиск не дал результатов
@@ -209,7 +229,7 @@ namespace BankruptFedresursClient
                 WebDriverWait wait = new(driver, new TimeSpan(0, 0, 10));
                 driver.Navigate();
                 var element = wait.Until(driver => driver.FindElement(By.ClassName("even")));
-                Thread.Sleep(rand.Next(2500, 5000));
+                Thread.Sleep(rand.Next(ClientSettings.Settings.MinRequestDelayInMsec, ClientSettings.Settings.MaxRequestDelayInMsec));
 
                 ReadOnlyCollection<IWebElement> rows = driver.FindElements(By.TagName("tr"));
 
@@ -246,7 +266,7 @@ namespace BankruptFedresursClient
         /// <returns>Поток памяти, содержащий в себе Excel файл.</returns>
         public static MemoryStream ExportMessagesToExcel(IEnumerable<DebtorMessage> messages)
         {
-            ExcelPackage excelPackage = new ExcelPackage();
+            ExcelPackage excelPackage = new();
             ExcelWorksheet sheet = excelPackage.Workbook.Worksheets.Add("Выгрузка сообщений");
 
             for (int i = 0; i < columns.Length; i++)
@@ -270,7 +290,7 @@ namespace BankruptFedresursClient
             ExcelTable tab = sheet.Tables.Add(range, "Table1");
             tab.TableStyle = TableStyles.Light16;
 
-            MemoryStream stream = new MemoryStream();
+            MemoryStream stream = new();
             excelPackage.SaveAs(stream);
             return stream;
         }
