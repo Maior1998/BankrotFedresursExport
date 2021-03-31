@@ -33,9 +33,9 @@ namespace Tests
         //    }
 
         //}
-       //[TestCase(2021, 3, 1,ExpectedResult = 727)]
+        [TestCase(2021, 3, 1,ExpectedResult = 727)]
         [TestCase(2020, 12, 10, ExpectedResult = 696)]
-        //[TestCase(2021, 2, 23, ExpectedResult = 163)]
+        [TestCase(2021, 2, 23, ExpectedResult = 163)]
         public int TestGetMessages(int y, int m, int d)
         {
             var type = new DebtorMessageType() { Id = 19, Name = "Реализация имущества должника-банкрота" };
