@@ -97,60 +97,86 @@ namespace BankruptFedresursClient
             WebDriverWait wait = new(driver, new TimeSpan(0, 0, 10));
             var element = wait.Until(driver => driver.FindElement(By.Id("ctl00_cphBody_mdsMessageType_hfSelectedType")));
             Thread.Sleep(rand.Next(500, 2000));
+            //через js выбираем тип сообщения
             IJavaScriptExecutor js = driver as IJavaScriptExecutor;
             js.ExecuteScript("ctl00_cphBody_mdsMessageType_hfSelectedType.value = \"\"");
             js.ExecuteScript("ctl00_cphBody_mdsMessageType_hfSelectedValue.value = \"ArbitralDecree\"");
             js.ExecuteScript("ctl00_cphBody_mdsMessageType_tbSelectedText.value = \"Сообщение о судебном акте\"");
-            //вызвать обновление списка
+            //вызываем обновление типа решения суда, чтобы появился combobox
+            //(не уверен насколько это необходимо, но на всякий случай, так как это
+            //происходит при штатной работе пользователя с программой)
             js.ExecuteScript("ToggleCourtDesicionType()");
+            //выбираем тип судебного акта тем, который нам дали на вход
             js.ExecuteScript($"ctl00_cphBody_ddlCourtDecisionType.value={messageTypeId}");
 
+            //переводим даты в вид, который принимает форма заполнения дат на странице.
             string startDateString = start.ToString("dd.MM.yyyy");
             string endDateString = end.ToString("dd.MM.yyyy");
 
+            //выбираем дату начала как в самом "выборщике" дат, так и в поле позадни него
             js.ExecuteScript($"ctl00_cphBody_cldrBeginDate_tbSelectedDate.value = \'{startDateString}\'");
             js.ExecuteScript($"SetHiddenField_ctl00_cphBody_cldrBeginDate('{startDateString}')");
-
+            //выбираем дату конца как в самом "выборщике" дат, так и в поле позадни него
             js.ExecuteScript($"ctl00_cphBody_cldrEndDate_tbSelectedDate.value = \'{endDateString}\'");
             js.ExecuteScript($"SetHiddenField_ctl00_cphBody_cldrEndDate('{endDateString}')");
-
+            //ждем произвольный интервал времени, чтобы изменения применились
             Thread.Sleep(rand.Next(500, 2000));
+            //находим кнопку поиска и кликаем по ней
             IWebElement input = driver.FindElement(By.Id("ctl00_cphBody_ibMessagesSearch"));
             input.Click();
+            //ожидаем случайный промежуток времени, чтобы данные успели прогрузиться
             Thread.Sleep(rand.Next(500, 2000));
-
+            
             List<DebtorMessage> messages = new List<DebtorMessage>();
-
+            //теперь нам нужено пробежать по всем страницам результатов поиска
             int curPage = 1;
             do
             {
-
-                Console.WriteLine();
+                //вызываем показ выбранной страницы (curPage)
                 js.ExecuteScript($"theForm.__EVENTTARGET.value = 'ctl00$cphBody$gvMessages';");
                 js.ExecuteScript($"theForm.__EVENTARGUMENT.value = 'Page${curPage}';");
                 js.ExecuteScript($"theForm.submit();");
+                //ожидаем завершения всех Ajax запросов
                 WaitForAjax(driver);
+                //ожидаем еще дополнительно немного времени,
+                //чтобы все отобразилось
                 Thread.Sleep(rand.Next(300, 1001));
+                //если замечаем, что на странице есть надпись о том, что результатов нет,
+                //то значит что мы дошли до конца
                 bool isSearchFailed = driver.PageSource.Contains(
                 "По заданным критериям не найдено ни одной записи. Уточните критерии поиска");
                 if (isSearchFailed)
                 {
+                    //если дошли до конца, То просто ждем определенный
+                    //промежуток времени и заканчиваем цикл обхода
                     Thread.Sleep(rand.Next(500, 5000));
                     //Если поиск не дал результатов
                     break;
                 }
-
+                //Если же результаты есть, то ищем таблицу, в которой будут результаты поиска
                 IWebElement table = driver.FindElement(By.Id("ctl00_cphBody_gvMessages"));
+                //и получаем массив ее строчек
                 ReadOnlyCollection<IWebElement> rows = table.FindElements(By.TagName("tr"));
+                //теперь наша задача пробежать по всем строкам и заполнить данные со страницы
                 foreach (IWebElement row in rows)
                 {
+                    //для каждой строки для сначала
+                    //получаем коллекцию всех ее столбцов
                     ReadOnlyCollection<IWebElement> columns = row.FindElements(By.TagName("td"));
-
+                    //Если число столбцов не равно 5, то эта строка не наша,
+                    //обычно такое происходит в конце таблицы, так как там
+                    //данные, не входящие в таблицу, тоже в нее решили включить.
                     if (columns.Count != 5) continue;
+
+                    //временный костыль потому что пока не знаем
+                    //что делать с аннулированными сообщениями
+                    if (columns[1].Text.ToLower().Contains("аннулировано"))
+                        continue;
+
+                    //сначала обрабатываем дату публикации сообщения
                     DebtorMessage buffer = new();
                     string dateCellValue = columns[0].Text;
                     Match dateTimeRegexMatch = datetimeRegex.Match(columns[0].Text);
-
                     buffer.DatePublished = new DateTime
                         (
                         int.Parse(dateTimeRegexMatch.Groups["year"].Value),
@@ -161,21 +187,32 @@ namespace BankruptFedresursClient
                         int.Parse(dateTimeRegexMatch.Groups["seconds"].Value)
                         );
 
+                    //затем берем тип акта суда
                     buffer.Type = new DebtorMessageType() { Name = columns[1].Text };
+
+                    //также отсюда вытаскиваем GUID сообщения
                     string messagePageLink = columns[1].FindElement(By.TagName("a")).GetAttribute("href");
                     buffer.Guid = messagePageHrefRegex.Match(messagePageLink).Groups[1].Value;
+
+                    //далее считываем ФИО должника.
                     buffer.Debtor = new Debtor() { FullName = columns[2].Text };
 
+                    //затем заполняем адрес (должника или суда?)
                     buffer.Address = columns[3].Text;
+                    //в конце будет идти ФИО арбитражного управляющего.
                     buffer.Owner = new ArbitrManager() { FullName = columns[4].Text };
                     messages.Add(buffer);
                 }
                 curPage++;
 
             } while (true);
-
+            //переводим получившийся список в массив
             DebtorMessage[] resultArray = messages.ToArray();
+            //заполняем даты рождения должников
             FillBirthDate(driver, resultArray);
+            //отключаем браузер
+            driver.Dispose();
+            //возвращаем результат
             return resultArray;
         }
 
