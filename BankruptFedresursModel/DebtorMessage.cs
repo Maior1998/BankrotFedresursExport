@@ -2,18 +2,8 @@
 
 namespace BankruptFedresursModel
 {
-    public enum CourtDecision
-    {
-
-    }
-
-    public enum CourtDecisionType
-    {
-
-    }
-
     /// <summary>
-    /// Сообщение по долэнику.
+    /// Сообщение по должнику.
     /// </summary>
     public class DebtorMessage
     {
@@ -52,14 +42,19 @@ namespace BankruptFedresursModel
             return Guid;
         }
     }
-
+    /// <summary>
+    /// Представляет собой тип сообщения по должнику.
+    /// Используется при фильтрации сообщенй на сайте федерального ресурса банкротов.
+    /// </summary>
     public class DebtorMessageType
     {
         /// <summary>
         /// Номер этого типа сообщения. Нужен при заполнении в браузере.
         /// </summary>
         public int Id { get; set; }
-
+        /// <summary>
+        /// Наименование данного типа сообщения по должнику.
+        /// </summary>
         public string Name { get; set; }
 
         public override string ToString()
