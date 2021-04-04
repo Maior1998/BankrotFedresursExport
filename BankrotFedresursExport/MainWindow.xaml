@@ -4,20 +4,30 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:BankrotFedresursExport"
+        xmlns:model="clr-namespace:BankrotFedresursExport.Model"
         mc:Ignorable="d"
-        
-        Title="BankruptFedresursExport" MinHeight="280" MinWidth="600"
-        Height="280" Width="600"
-        ResizeMode="CanResizeWithGrip"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="ToolWindow"
+        Title="Выгрузка сообщений о банкротствах"
+        MinHeight="280"
+        MinWidth="600"
+        Height="350" Width="600"
+        ResizeMode="NoResize"
         FontSize="16">
+    
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <model:BoolInverterConverter x:Key="BoolInverterConverter"/>
     </Window.Resources>
     <Window.DataContext>
         <local:MainViewModel/>
     </Window.DataContext>
-    <DockPanel LastChildFill="False" Margin="16" >
-        <GroupBox DockPanel.Dock="Top" Header="Выбор типа сообщения:" Padding="12">
+    <DockPanel Margin="16" >
+        <GroupBox 
+            DockPanel.Dock="Top" 
+            Header="Выбор типа сообщения:" 
+            IsEnabled="{Binding IsLoading, Converter={StaticResource BoolInverterConverter}}"
+            Padding="12">
             <ComboBox
                 DockPanel.Dock="Top"
                 ItemsSource="{Binding MessageTypes}"
@@ -27,8 +37,14 @@
         </GroupBox>
         <Separator DockPanel.Dock="Top"
                    Width="16" Visibility="Hidden"/>
-        <GroupBox DockPanel.Dock="Top" Header="Выбор периода публикации сообщений:" Padding="12">
+        <GroupBox 
+            DockPanel.Dock="Top" 
+            IsEnabled="{Binding IsLoading, Converter={StaticResource BoolInverterConverter}}"
+            Header="Выбор периода публикации сообщений:" 
+            Padding="12">
             <DockPanel Dock="Top"
+                       
+                       
                        HorizontalAlignment="Center">
                 <Label>С</Label>
                 <DatePicker
@@ -46,10 +62,36 @@
         <Button 
             DockPanel.Dock="Bottom" 
             Width="120" Padding="16,4"
-            Content="Сохранить" 
+            
             Command="{Binding Save}"
-        />
-        <ProgressBar DockPanel.Dock="Bottom" IsIndeterminate="True" Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        >
+            <Button.Style>
+                <Style TargetType="Button">
+                    <Setter Property="Content" Value="Сохранить"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                            <DataTrigger.Setters>
+                                <Setter Property="Content" Value="Отмена"/>
+                            </DataTrigger.Setters>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Button.Style>
+        </Button>
+        <Label
+            DockPanel.Dock="Top"
+            HorizontalAlignment="Center"
+            Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
+            Content="{Binding CurrentStatus}"
+            />
+        <ProgressBar 
+            VerticalAlignment="Center"
+            Height="16"
+            Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
+            DockPanel.Dock="Bottom" 
+            IsIndeterminate="{Binding IsIndeterminate}"
+            Value="{Binding Progress}"
+            />
 
     </DockPanel>
 </Window>
