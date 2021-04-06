@@ -99,7 +99,7 @@ namespace BankrotFedresursExport
             {
                 MemoryStream memoryStream =
                     BankrotClient.ExportMessagesToExcel(
-                        BankrotClient.GetMessages(DateFrom, DateTo, SelectedMessageType));
+                        BankrotClient.GetMessagesWithBirthDates(DateFrom, DateTo,new []{SelectedMessageType}));
                 File.WriteAllBytes(filePath, memoryStream.ToArray());
                 Process.Start("explorer.exe",$"/select, \"{filePath}\"");
             }
