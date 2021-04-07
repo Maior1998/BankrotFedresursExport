@@ -5,8 +5,51 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:BankrotFedresursExport"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        
+        Title="BankruptFedresursExport" MinHeight="280" MinWidth="600"
+        Height="280" Width="600"
+        ResizeMode="CanResizeWithGrip"
+        FontSize="16">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
+    <Window.DataContext>
+        <local:MainViewModel/>
+    </Window.DataContext>
+    <DockPanel LastChildFill="False" Margin="16" >
+        <GroupBox DockPanel.Dock="Top" Header="Выбор типа сообщения:" Padding="12">
+            <ComboBox
+                DockPanel.Dock="Top"
+                ItemsSource="{Binding MessageTypes}"
+                SelectedItem="{Binding SelectedMessageType}"
+            >
+            </ComboBox>
+        </GroupBox>
+        <Separator DockPanel.Dock="Top"
+                   Width="16" Visibility="Hidden"/>
+        <GroupBox DockPanel.Dock="Top" Header="Выбор периода публикации сообщений:" Padding="12">
+            <DockPanel Dock="Top"
+                       HorizontalAlignment="Center">
+                <Label>С</Label>
+                <DatePicker
+                    HorizontalAlignment="Left"
+                    SelectedDate="{Binding DateFrom}"
+                />
+                <Separator Width="32" Visibility="Hidden"/>
+                <Label>По</Label>
+                <DatePicker
+                    HorizontalAlignment="Right"
+                    SelectedDate="{Binding DateTo}"
+                />
+            </DockPanel>
+        </GroupBox>
+        <Button 
+            DockPanel.Dock="Bottom" 
+            Width="120" Padding="16,4"
+            Content="Сохранить" 
+            Command="{Binding Save}"
+        />
+        <ProgressBar DockPanel.Dock="Bottom" IsIndeterminate="True" Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
-    </Grid>
+    </DockPanel>
 </Window>
