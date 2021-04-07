@@ -11,8 +11,7 @@ namespace BankruptFedresursClient
     
     public class ClientSettings
     {
-        
-        public string DriverPath { get; set; }
+        public string UserAgent { get; set; }
         public ushort MinRequestDelayInMsec { get;  set; }
         public ushort MaxRequestDelayInMsec { get;  set; }
         private const string SettingsFilePath = "ClientSettings.json";
@@ -22,9 +21,9 @@ namespace BankruptFedresursClient
         {
             Settings = new ClientSettings()
             {
-                DriverPath = "./",
                 MinRequestDelayInMsec = 2500,
-                MaxRequestDelayInMsec = 5000
+                MaxRequestDelayInMsec = 2500,
+                UserAgent = "Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5355d Safari/8536.25"
             };
 
             try

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -9,8 +10,11 @@ using System.ServiceModel;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+
 using BankruptFedresursClient;
+
 using BankruptFedresursModel;
+
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
@@ -19,7 +23,7 @@ namespace ApiTests
 {
     class Program
     {
-        
+
         static void Main(string[] args)
         {
             DateTime testDate = new(2021, 04, 01);
@@ -36,7 +40,7 @@ namespace ApiTests
                 DebtorMessage[] messages = BankrotClient.GetMessages(
                     testDate,
                     testDate,
-                    new []{BankrotClient.SupportedMessageTypes.First()});
+                    BankrotClient.SupportedMessageTypes.First());
                 BankrotClient.ExportMessagesToExcel(messages);
                 watch.Stop();
                 double elapsedSeconds = watch.Elapsed.TotalSeconds;
