@@ -13,11 +13,19 @@ using OfficeOpenXml.Table;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
+using WebDriverManager;
+using WebDriverManager.DriverConfigs.Impl;
+using WebDriverManager.Helpers;
 
 namespace BankruptFedresursClient
 {
     public static class BankrotClient
     {
+        
+
+        private static CancellationToken cancellationToken = new();
+        private static IWebDriver driver;
+        private static bool isLoading;
 
         /// <summary>
         /// Получает массив сообщений по должникам при помощи фильтров:
@@ -59,6 +67,12 @@ namespace BankruptFedresursClient
             return GetMessages(start, end, type.Id);
         }
 
+        private static IWebDriver GetDriver()
+        {
+            ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
+            chromeDriverService.HideCommandPromptWindow = true;
+            ChromeOptions chromeOptions = new(); 
+            chromeOptions.AddArgument("--headless");
 
 
         /// <summary>
@@ -303,6 +317,10 @@ namespace BankruptFedresursClient
         /// <returns>Поток памяти, содержащий в себе Excel файл.</returns>
         public static MemoryStream ExportMessagesToExcel(IEnumerable<DebtorMessage> messages)
         {
+            ProgressChanged?.Invoke(new ExportStage()
+            {
+                Name = "Выгрузка в Excel файл"
+            });
             ExcelPackage excelPackage = new();
             ExcelWorksheet sheet = excelPackage.Workbook.Worksheets.Add("Выгрузка сообщений");
 
@@ -398,7 +416,7 @@ namespace BankruptFedresursClient
             /// <summary>
             /// Выражение, которые вытащит из сообщения по должнику нужное поле.
             /// </summary>
-            private Expression<Func<DebtorMessage, object>> cellValueFromMessageExpression;
+            private readonly Expression<Func<DebtorMessage, object>> cellValueFromMessageExpression;
 
         }
 
@@ -407,11 +425,13 @@ namespace BankruptFedresursClient
             //Установка некоммерческой лицензии использования EPPLUS,
             //так как мы не собираемся продавать программу.
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            DriverManager manager = new();
+            manager.SetUpDriver(new ChromeConfig(),VersionResolveStrategy.MatchingBrowser);
         }
 
-        private static Regex dateRegex = new(@"(?<day>\d+)\.(?<month>\d+)\.(?<year>\d{4})");
-        private static readonly Regex messagePageHrefRegex = new Regex(@"/MessageWindow\.aspx\?ID=([A-Z0-9]+)");
-        private static readonly Regex datetimeRegex = new Regex(@"(?<day>\d+)\.(?<month>\d+)\.(?<year>\d{4}) (?<hours>\d+):(?<minutes>\d+):(?<seconds>\d+)");
+        private static readonly Regex dateRegex = new(@"(?<day>\d+)\.(?<month>\d+)\.(?<year>\d{4})");
+        private static readonly Regex messagePageHrefRegex = new(@"/MessageWindow\.aspx\?ID=([A-Z0-9]+)");
+        private static readonly Regex datetimeRegex = new(@"(?<day>\d+)\.(?<month>\d+)\.(?<year>\d{4}) (?<hours>\d+):(?<minutes>\d+):(?<seconds>\d+)");
 
     }
 
