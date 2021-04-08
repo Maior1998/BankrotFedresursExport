@@ -19,7 +19,7 @@ namespace BankruptFedresursScript
 
         private static void BankrotClient_ProgressChanged(BankruptFedresursClient.ExportStage obj)
         {
-            Console.WriteLine($"[{DateTime.Now:dd.MM.yyyy HH:mm:ss}] {obj.Name}{(obj.AllCount == 0 ? string.Empty : $" {obj.Done} / {obj.AllCount} {obj.Done * 100f / obj.AllCount:P1}")}");
+            Console.WriteLine($"[{DateTime.Now:dd.MM.yyyy HH:mm:ss}] {obj.Name}{(obj.AllCount == 0 ? string.Empty : $" {obj.Done} / {obj.AllCount} {(float)obj.Done / obj.AllCount:P1}")}");
         }
     }
 }
