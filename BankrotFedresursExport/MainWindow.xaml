@@ -7,12 +7,13 @@
         xmlns:model="clr-namespace:BankrotFedresursExport.Model"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        WindowStyle="ToolWindow"
+        
         Title="Выгрузка сообщений о банкротствах"
         MinHeight="280"
         MinWidth="600"
         Height="350" Width="600"
-        ResizeMode="NoResize"
+        Loaded="MainWindow_OnLoaded"
+        ResizeMode="CanMinimize"
         FontSize="16">
 
     <Window.Resources>
@@ -50,7 +51,7 @@
                        HorizontalAlignment="Center">
                 <Label>С</Label>
                 <DatePicker
-                    DisplayDateEnd="{Binding FromDateDisplayEnd, Mode=OneWay}"
+                    
                     ToolTip="{Binding ElementName=dpFrom, Path=(Validation.Errors)[0].ErrorContent}"
                     x:Name="dpFrom"
                 >
@@ -70,8 +71,7 @@
                 <Separator Width="32" Visibility="Hidden"/>
                 <Label>По</Label>
                 <DatePicker
-                    DisplayDateStart="{Binding DateFrom, Mode=OneWay}"
-                    DisplayDateEnd="{Binding ToDateDisplayEnd, Mode=OneWay}"
+                    
                     HorizontalAlignment="Right"
                     ToolTip="{Binding ElementName=dpTo, Path=(Validation.Errors)[0].ErrorContent}"
                     x:Name="dpTo"

@@ -33,18 +33,10 @@ namespace BankrotFedresursExport
 
         }
 
-        public DateTime FromDateDisplayEnd => DateTime.Now;
-        [Reactive] public DateTime ToDateDisplayEnd { get; private set; }
         private void UpdateDateTo()
         {
+            OnFromDateChanged?.Invoke(DateFrom);
             DateTo = DateFrom;
-            DateTime calculatedFromDateFrom = DateFrom.AddDays(29).Date;
-            DateTime todayDate = DateTime.Today;
-
-            ToDateDisplayEnd =
-                todayDate < calculatedFromDateFrom
-                    ? todayDate
-                    : calculatedFromDateFrom;
         }
         private void UpdateProgress(ExportStage stage)
         {
@@ -58,11 +50,13 @@ namespace BankrotFedresursExport
         [Reactive] public string CurrentStatus { get; set; }
 
         private static CancellationTokenSource cancellationTokenSource = new();
-        [Reactive] public DateTime DateFrom { get; set; } = DateTime.Today;
-        [Reactive] public DateTime DateTo { get; set; } = DateTime.Today;
+        [Reactive] public DateTime DateFrom { get; set; } = DateTime.Today.AddDays(-1).Date;
+        [Reactive] public DateTime DateTo { get; set; }
         public MessageTypeSelectItem[] MessageTypes { get; }
             = BankrotClient.SupportedMessageTypes
                 .Select(x => new MessageTypeSelectItem(x)).ToArray();
+
+        public event Action<DateTime> OnFromDateChanged;
 
         private DelegateCommand save;
 
