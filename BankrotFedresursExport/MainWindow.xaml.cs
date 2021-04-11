@@ -23,6 +23,23 @@ namespace BankrotFedresursExport
         public MainWindow()
         {
             InitializeComponent();
+            ((MainViewModel)DataContext).OnFromDateChanged += MainWindow_OnFromDateChanged;
+        }
+
+        private void MainWindow_OnFromDateChanged(DateTime obj)
+        {
+            dpTo.BlackoutDates.Clear();
+            dpTo.SelectedDate = null;
+            dpTo.BlackoutDates.Add(new CalendarDateRange(DateTime.MinValue,obj.Date.AddDays(-1).Date));
+            DateTime calulatedDate = obj.AddDays(30).Date;
+            DateTime todayTime = DateTime.Today.AddDays(1).Date;
+            dpTo.BlackoutDates.Add(new CalendarDateRange(calulatedDate < todayTime ? calulatedDate : todayTime, DateTime.MaxValue));
+        }
+
+        private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
+        {
+            dpFrom.BlackoutDates.Add(new CalendarDateRange(DateTime.MinValue, DateTime.Today.AddYears(-2)));
+            dpFrom.BlackoutDates.Add(new CalendarDateRange(DateTime.Today.AddDays(1).Date, DateTime.MaxValue));
         }
     }
 }
