@@ -14,7 +14,7 @@ namespace BankruptFedresursScript
             DebtorMessage[] messages = BankruptFedresursClient.BankrotClient.GetMessagesWithBirthDates(dateExport,
                 BankruptFedresursClient.BankrotClient.SupportedMessageTypes);
             MemoryStream stream = BankruptFedresursClient.BankrotClient.ExportMessagesToExcel(messages);
-            File.WriteAllBytes($"{DateTime.Now:dd.MM.yyyy HH:mm:ss}.xlsx", stream.ToArray());
+            File.WriteAllBytes($"Выгрузка сообщений от {DateTime.Now:dd.MM.yyyy HH mm ss}.xlsx", stream.ToArray());
         }
 
         private static void BankrotClient_ProgressChanged(BankruptFedresursClient.ExportStage obj)

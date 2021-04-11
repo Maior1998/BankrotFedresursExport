@@ -39,13 +39,7 @@ namespace BankruptFedresursClient
             return GetMessagesWithBirthDates(date, date, type);
         }
 
-        public static DebtorMessage[] GetMessagesWithBirthDates(DateTime startDate, DateTime endDate,
-            DebtorMessageType[] type)
-        {
-            return GetMessagesWithBirthDates(startDate, endDate, type.Select(x => x.Id).ToArray());
-        }
-
-        public static DebtorMessage[] GetMessagesWithBirthDates(DateTime startDate, DateTime endDate, ushort[] type)
+        public static DebtorMessage[] GetMessagesWithBirthDates(DateTime startDate, DateTime endDate, DebtorMessageType[] type)
         {
             DebtorMessage[] messages = GetMessages(startDate, endDate, type);
             FillBirthDate(messages);
@@ -62,34 +56,7 @@ namespace BankruptFedresursClient
         /// <returns>Массив сообщений по должникам с учетом фильтров по дате публикации и типу сообщения.</returns>
         public static DebtorMessage[] GetMessages(DateTime date, DebtorMessageType[] types)
         {
-            return GetMessages(date, types.Select(x => x.Id).ToArray());
-        }
-
-        /// <summary>
-        /// Получает массив сообщений по должникам при помощи фильтров:
-        /// день публикации сообщения,
-        /// а также фильтр по типу опубликуемого арбитражным управляющим сообщения.
-        /// </summary>
-        /// <param name="date">День публикации сообщения.</param>
-        /// <param name="messageTypeIds">Массив индексов типов сообщений суда, которые необходимо вытащить.</param>
-        /// <returns>Массив сообщений по должникам с учетом фильтров по дате публикации и типу сообщения.</returns>
-        public static DebtorMessage[] GetMessages(DateTime date, ushort[] messageTypeIds)
-        {
-            return GetMessages(date, date, messageTypeIds);
-        }
-
-        /// <summary>
-        /// Получает массив сообщений по должникам при помощи фильтров:
-        /// интервал публикации сообщения (дата-начало, дата-конец),
-        /// а также фильтр по типу опубликуемого арбитражным управляющим сообщения.
-        /// </summary>
-        /// <param name="start">Дата-начало фильтра по дате публикации сообщения.</param>
-        /// <param name="end">Дата-конец фильтра по дате публикации сообщения.</param>
-        /// <param name="type">Объект типа сообщения суда, которое необходимо вытащить.</param>
-        /// <returns>Массив сообщений по должникам с учетом фильтров по дате публикации и типу сообщения.</returns>
-        public static DebtorMessage[] GetMessages(DateTime start, DateTime end, DebtorMessageType[] type)
-        {
-            return GetMessages(start, end, type.Select(x => x.Id).ToArray());
+            return GetMessages(date, types);
         }
 
         private static Cookie GetCookie()
@@ -114,9 +81,9 @@ namespace BankruptFedresursClient
         /// </summary>
         /// <param name="start">Дата-начало фильтра по дате публикации сообщения.</param>
         /// <param name="end">Дата-конец фильтра по дате публикации сообщения.</param>
-        /// <param name="messageTypeIds">Номера типов сообщения суда, которые необходимо вытащить.</param>
+        /// <param name="messageTypes">Объект типа сообщения суда, которое необходимо вытащить.</param>
         /// <returns>Массив сообщений по должникам с учетом фильтров по дате публикации и типу сообщения.</returns>
-        public static DebtorMessage[] GetMessages(DateTime start, DateTime end, ushort[] messageTypeIds)
+        public static DebtorMessage[] GetMessages(DateTime start, DateTime end, DebtorMessageType[] messageTypes)
         {
             if (isLoading)
                 throw new InvalidOperationException("Already Loading");
@@ -138,17 +105,18 @@ namespace BankruptFedresursClient
             EndDate = end;
             List<DebtorMessage> resultList = new();
             sessionCookie = GetCookie();
-            foreach (ushort messageTypeId in messageTypeIds)
+            foreach (DebtorMessageType curMessageType in messageTypes)
             {
-                MessageId = messageTypeId;
+                ProgressChanged?.Invoke(new ExportStage()
+                {
+                    Name = $"Обрабатывается сообщение \"{curMessageType.Name}\" (номер: {curMessageType.Id})"
+                });
+                MessageId = curMessageType.Id;
                 List<DebtorMessage> messages = new();
                 //теперь нам нужно пробежать по всем страницам результатов поиска
                 ushort curPage = 0;
                 do
                 {
-
-
-
                     PageId = curPage;
                     cancellationToken.ThrowIfCancellationRequested();
                     //вызываем показ выбранной страницы (curPage)
@@ -160,8 +128,9 @@ namespace BankruptFedresursClient
                         NotFoundString);
                     if (isSearchFailed)
                     {
-                        //если дошли до конца, То просто ждем определенный
-                        //промежуток времени и заканчиваем цикл обхода
+                        //если дошли до конца, То просто ждем случайно
+                        //определенный промежуток времени и заканчиваем
+                        //цикл обхода
                         Thread.Sleep(rand.Next(500, 5000));
                         //Если поиск не дал результатов
                         break;
@@ -194,7 +163,7 @@ namespace BankruptFedresursClient
                             DatePublished = DateTime.ParseExact(datePublished, "dd.MM.yyyy HH:mm:ss", CultureInfo.CurrentCulture),
                             Debtor = new Debtor() { FullName = debtorFullName },
                             Owner = new ArbitrManager() { FullName = authorFullName },
-                            Type = new DebtorMessageType() { Id = messageTypeId, Name = messageType },
+                            Type = curMessageType,
                             Guid = messageGuid
                         };
                         messages.Add(buffer);
@@ -214,7 +183,7 @@ namespace BankruptFedresursClient
 
             }
 
-
+            isLoading = false;
             //возвращаем результат
             return resultList.ToArray();
         }
@@ -373,9 +342,8 @@ namespace BankruptFedresursClient
                 message => message.DatePublished,
                 "dd.mm.yyyy"),
 
-            new(
-                "Тип сообщения",
-                message => message.Type.Name),
+            new ("Тип решения суда",
+                message=>message.Type.Name),
 
             new(
                 "Должник",

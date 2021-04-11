@@ -14,7 +14,7 @@
         Height="350" Width="600"
         ResizeMode="NoResize"
         FontSize="16">
-    
+
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <model:BoolInverterConverter x:Key="BoolInverterConverter"/>
@@ -28,12 +28,16 @@
             Header="Выбор типа сообщения:" 
             IsEnabled="{Binding IsLoading, Converter={StaticResource BoolInverterConverter}}"
             Padding="12">
-            <ComboBox
-                DockPanel.Dock="Top"
-                ItemsSource="{Binding MessageTypes}"
-                SelectedItem="{Binding SelectedMessageType}"
-            >
-            </ComboBox>
+            <ItemsControl ItemsSource="{Binding MessageTypes}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type local:MainViewModel+MessageTypeSelectItem}">
+                        <CheckBox 
+                            Content="{Binding Type.Name}"
+                            IsChecked="{Binding IsSelected}"
+                            />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </GroupBox>
         <Separator DockPanel.Dock="Top"
                    Width="16" Visibility="Hidden"/>
@@ -43,20 +47,45 @@
             Header="Выбор периода публикации сообщений:" 
             Padding="12">
             <DockPanel Dock="Top"
-                       
-                       
                        HorizontalAlignment="Center">
                 <Label>С</Label>
                 <DatePicker
-                    HorizontalAlignment="Left"
-                    SelectedDate="{Binding DateFrom}"
-                />
+                    DisplayDateEnd="{Binding FromDateDisplayEnd, Mode=OneWay}"
+                    ToolTip="{Binding ElementName=dpFrom, Path=(Validation.Errors)[0].ErrorContent}"
+                    x:Name="dpFrom"
+                >
+                    <DatePicker.SelectedDate>
+                        <Binding 
+                            Path="DateFrom" 
+                            UpdateSourceTrigger="PropertyChanged"
+                            ValidatesOnExceptions="True"
+                            >
+                            <Binding.ValidationRules>
+                                <DataErrorValidationRule/>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </DatePicker.SelectedDate>
+                </DatePicker>
+
                 <Separator Width="32" Visibility="Hidden"/>
                 <Label>По</Label>
                 <DatePicker
+                    DisplayDateStart="{Binding DateFrom, Mode=OneWay}"
+                    DisplayDateEnd="{Binding ToDateDisplayEnd, Mode=OneWay}"
                     HorizontalAlignment="Right"
-                    SelectedDate="{Binding DateTo}"
-                />
+                    ToolTip="{Binding ElementName=dpTo, Path=(Validation.Errors)[0].ErrorContent}"
+                    x:Name="dpTo"
+                >
+                    <DatePicker.SelectedDate>
+                        <Binding 
+                            Path="DateTo" 
+                            ValidatesOnExceptions="True">
+                            <Binding.ValidationRules>
+                                <DataErrorValidationRule/>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </DatePicker.SelectedDate>
+                </DatePicker>
             </DockPanel>
         </GroupBox>
         <Button 
