@@ -56,7 +56,7 @@ namespace BankruptFedresursClient
         /// <returns>Массив сообщений по должникам с учетом фильтров по дате публикации и типу сообщения.</returns>
         public static DebtorMessage[] GetMessages(DateTime date, DebtorMessageType[] types)
         {
-            return GetMessages(date, types);
+            return GetMessages(date, date, types);
         }
 
         private static Cookie GetCookie()
