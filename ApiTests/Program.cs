@@ -33,8 +33,7 @@ namespace ApiTests
             BankrotClient.ProgressChanged += BankrotClient_ProgressChanged;
             for (ushort delay = 3000; delay >= 1000; delay -= 100)
             {
-                ClientSettings.Settings.MinRequestDelayInMsec = delay;
-                ClientSettings.Settings.MaxRequestDelayInMsec = (ushort)(delay + 10);
+                ClientSettings.Settings.RequestDelay = delay;
                 Stopwatch stopwatch = new();
                 stopwatch.Start();
                 DebtorMessage[] messages = BankrotClient.GetMessagesWithBirthDates(date, BankrotClient.SupportedMessageTypes);

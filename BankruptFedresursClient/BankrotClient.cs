@@ -226,7 +226,7 @@ namespace BankruptFedresursClient
                     AllCount = length
                 });
                 cancellationToken.ThrowIfCancellationRequested();
-                Thread.Sleep(rand.Next(ClientSettings.Settings.MinRequestDelayInMsec, ClientSettings.Settings.MaxRequestDelayInMsec));
+                Thread.Sleep(ClientSettings.Settings.RequestDelay);
                 message.Debtor.BirthDate = GetDebtorBirthDate(message.Guid);
                 doneCount++;
             }
