@@ -14,12 +14,12 @@ namespace BankruptFedresursScript
             DebtorMessage[] messages = BankruptFedresursClient.BankrotClient.GetMessagesWithBirthDates(dateExport,
                 BankruptFedresursClient.BankrotClient.SupportedMessageTypes);
             MemoryStream stream = BankruptFedresursClient.BankrotClient.ExportMessagesToExcel(messages);
-            File.WriteAllBytes($"{DateTime.Now:dd.MM.yyyy HH:mm:ss}.xlsx", stream.ToArray());
+            File.WriteAllBytes($"Выгрузка сообщений от {DateTime.Now:dd.MM.yyyy HH mm ss}.xlsx", stream.ToArray());
         }
 
         private static void BankrotClient_ProgressChanged(BankruptFedresursClient.ExportStage obj)
         {
-            Console.WriteLine($"[{DateTime.Now:dd.MM.yyyy HH:mm:ss}] {obj.Name}{(obj.AllCount == 0 ? string.Empty : $" {obj.Done} / {obj.AllCount} {obj.Done * 100f / obj.AllCount:P1}")}");
+            Console.WriteLine($"[{DateTime.Now:dd.MM.yyyy HH:mm:ss}] {obj.Name}{(obj.AllCount == 0 ? string.Empty : $" {obj.Done} / {obj.AllCount} {(float)obj.Done / obj.AllCount:P1}")}");
         }
     }
 }

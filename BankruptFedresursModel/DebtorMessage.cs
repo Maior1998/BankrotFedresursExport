@@ -51,7 +51,7 @@ namespace BankruptFedresursModel
         /// <summary>
         /// Номер этого типа сообщения. Нужен при заполнении в браузере.
         /// </summary>
-        public int Id { get; set; }
+        public ushort Id { get; set; }
         /// <summary>
         /// Наименование данного типа сообщения по должнику.
         /// </summary>

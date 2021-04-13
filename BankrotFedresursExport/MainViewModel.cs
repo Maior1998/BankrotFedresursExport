@@ -18,12 +18,13 @@ using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
 namespace BankrotFedresursExport
 {
-    public class MainViewModel : ReactiveObject
+    public class MainViewModel : ReactiveObject, IDataErrorInfo
     {
         public MainViewModel()
-        {   //значение строки задается в переменную, но при запуске не отображается
+        {
+            this.WhenAnyValue(x => x.DateFrom).Subscribe(_ => UpdateDateTo());
+            //значение строки задается в переменную, но при запуске не отображается
             BankrotClient.ProgressChanged += UpdateProgress;
-            SelectedMessageType = MessageTypes.First();
             backgroundWorker.DoWork += (_, args) =>
             {
                 ThreadPool.QueueUserWorkItem(_ => SaveMessages(args.Argument?.ToString()));
@@ -32,6 +33,11 @@ namespace BankrotFedresursExport
 
         }
 
+        private void UpdateDateTo()
+        {
+            OnFromDateChanged?.Invoke(DateFrom);
+            DateTo = DateFrom;
+        }
         private void UpdateProgress(ExportStage stage)
         {
             CurrentStatus = stage.Name;
@@ -44,11 +50,13 @@ namespace BankrotFedresursExport
         [Reactive] public string CurrentStatus { get; set; }
 
         private static CancellationTokenSource cancellationTokenSource = new();
-        [Reactive] public DateTime DateFrom { get; set; } = DateTime.Today;
-        [Reactive] public DateTime DateTo { get; set; } = DateTime.Today;
-        public DebtorMessageType[] MessageTypes { get; set; } = BankrotClient.SupportedMessageTypes;
+        [Reactive] public DateTime DateFrom { get; set; } = DateTime.Today.AddDays(-1).Date;
+        [Reactive] public DateTime DateTo { get; set; }
+        public MessageTypeSelectItem[] MessageTypes { get; }
+            = BankrotClient.SupportedMessageTypes
+                .Select(x => new MessageTypeSelectItem(x)).ToArray();
 
-        [Reactive] public DebtorMessageType SelectedMessageType { get; set; }
+        public event Action<DateTime> OnFromDateChanged;
 
         private DelegateCommand save;
 
@@ -63,7 +71,7 @@ namespace BankrotFedresursExport
                         AddExtension = true,
                         DefaultExt = "xlsx",
                         Filter = "Таблица Microsoft Excel|*.xlsx|Все файлы|*.*",
-                        FileName = $"Выгрузка сообщений от {DateTime.Now:dd.MM.yyyy HH:mm}"
+                        FileName = $"Выгрузка сообщений от {DateTime.Now:dd.MM.yyyy HH mm}"
                     };
 
                     IsLoading = true;
@@ -86,10 +94,27 @@ namespace BankrotFedresursExport
                 }
             }, () =>
             {
-                return SelectedMessageType != null;
+                return MessageTypes != null
+                       && MessageTypes.Any(x => x.IsSelected)
+                       && DateFrom <= DateTo;
             });
 
 
+
+        public class MessageTypeSelectItem : ReactiveObject
+        {
+            public MessageTypeSelectItem(DebtorMessageType type)
+            {
+                Type = type;
+            }
+            public DebtorMessageType Type { get; set; }
+            [Reactive] public bool IsSelected { get; set; }
+
+            public override string ToString()
+            {
+                return Type?.Name;
+            }
+        }
         private void SaveMessages(string filePath)
         {
             cancellationTokenSource = new CancellationTokenSource();
@@ -99,9 +124,14 @@ namespace BankrotFedresursExport
             {
                 MemoryStream memoryStream =
                     BankrotClient.ExportMessagesToExcel(
-                        BankrotClient.GetMessagesWithBirthDates(DateFrom, DateTo,new []{SelectedMessageType}));
+                        BankrotClient.GetMessagesWithBirthDates(
+                            DateFrom,
+                            DateTo,
+                            MessageTypes
+                                .Where(x => x.IsSelected)
+                                .Select(x => x.Type).ToArray()));
                 File.WriteAllBytes(filePath, memoryStream.ToArray());
-                Process.Start("explorer.exe",$"/select, \"{filePath}\"");
+                Process.Start("explorer.exe", $"/select, \"{filePath}\"");
             }
             catch (OperationCanceledException)
             {
@@ -119,5 +149,30 @@ namespace BankrotFedresursExport
         }
 
         [Reactive] public bool IsLoading { get; set; }
+        public string Error => null;
+
+        public string this[string columnName]
+        {
+            
+            get
+            {
+                string result = null;
+                
+                switch (columnName)
+                {
+                    case nameof(DateFrom):
+                    case nameof(DateTo):
+                        if (DateFrom > DateTo)
+                            result = "Дата начала поиска не может быть позднее даты конца поиска!";
+                        if ((DateTo - DateFrom).TotalDays >= 30)
+                            result = "Интервал поиска не может превышать 29 дней!";
+                        break;
+                        default:
+                            break;
+                }
+                return result;
+            }
+
+        }
     }
 }
