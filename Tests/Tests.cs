@@ -23,9 +23,8 @@ namespace Tests
         [Test]
         public void SimpleDateFilterTest()
         {
-            Random rand = new Random();
-            DateTime from = new DateTime
-                (
+            Random rand = new();
+            DateTime from = new(
                 rand.Next(2020, 2022),
                 rand.Next(1, 13),
                 rand.Next(1, 25)
@@ -40,17 +39,6 @@ namespace Tests
             }
 
         }
-        public static string ConvertXlsToXlsx(FileInfo file)
-        {
-            Microsoft.Office.Interop.Excel.Application app = new Microsoft.Office.Interop.Excel.Application();
-            string xlsFile = file.FullName;
-            Microsoft.Office.Interop.Excel.Workbook wb = app.Workbooks.Open(xlsFile);
-            string xlsxFile = xlsFile + "x";
-            wb.SaveAs(Filename: xlsxFile, FileFormat: Microsoft.Office.Interop.Excel.XlFileFormat.xlOpenXMLWorkbook);
-            wb.Close();
-            app.Quit();
-            return xlsxFile;
-        }
         [TestCase(2021, 3, 1,ExpectedResult = 727)]
         [TestCase(2020, 12, 10, ExpectedResult = 696)]
         [TestCase(2021, 2, 23, ExpectedResult = 163)]
@@ -60,13 +48,12 @@ namespace Tests
             
             DebtorMessage[] messages = BankrotClient.GetMessages(new DateTime(year, month, day), type);
             return messages.Length;
-            ///javascript:__doPostBack('ctl00$cphBody$lnkbtnExcelExport','')
         }
         [Test]
         public void TestInputInvalidDate()
         {
-            DateTime start = new DateTime(2021, 3, 13);
-            DateTime end = new DateTime(2021, 3, 12);
+            DateTime start = new(2021, 3, 13);
+            DateTime end = new(2021, 3, 12);
             DebtorMessageType[] type = { BankrotClient.SupportedMessageTypes.First(x => x.Id == 19) };
             Exception ex = Assert.Throws<Exception>(() => BankrotClient.GetMessages(start, end, type));
 
@@ -76,29 +63,29 @@ namespace Tests
         [Test]
         public void TestInputInvalidInterval()
         {
-            DateTime start = new DateTime(2021, 1, 13);
-            DateTime end = new DateTime(2021, 3, 12);
+            DateTime start = new(2021, 1, 13);
+            DateTime end = new(2021, 3, 12);
             DebtorMessageType[] type = { BankrotClient.SupportedMessageTypes.First(x => x.Id == 19) };
             InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => BankrotClient.GetMessages(start, end, type));
             Assert.That(ex.Message == "Максимальная длина интервала - 30 дней!");
         }
 
-        [TestCase(2, ExpectedResult ="09.09.1958")]
+        [TestCase(2, ExpectedResult = "09.09.1958")]
         public object TestExportMessagesToExcel(int indexRow)
         {
-            DateTime date = new DateTime(2021, 1, 1);
+            DateTime date = new(2021, 1, 1);
             DebtorMessageType[] type = { BankrotClient.SupportedMessageTypes.First(x => x.Id == 19) };
             DebtorMessage[] mess = BankrotClient.GetMessagesWithBirthDates(date, type);
 
             MemoryStream memoryStreamExcel = BankrotClient.ExportMessagesToExcel(mess);
-            var excelFile = new ExcelPackage(memoryStreamExcel);
-            var buf = excelFile.Workbook.Worksheets[0].Cells[indexRow, 4];
+            ExcelPackage excelFile = new(memoryStreamExcel);
+            string buf = (excelFile.Workbook.Worksheets.First().Cells[indexRow, 4].Text);
             return buf;
         }
         [Test]
         public void Test()
         {
-            ExcelPackage excelFile = new ExcelPackage(new FileInfo("C:\\Users\\aidan\\Desktop\\test.xlsx"));
+            ExcelPackage excelFile = new(new FileInfo("C:\\Users\\aidan\\Desktop\\test.xlsx"));
             ExcelWorksheet worksheet = excelFile.Workbook.Worksheets["Лист1"];
             ExcelCellAddress start = worksheet.Dimension.Start;
             ExcelCellAddress end = worksheet.Dimension.End;
