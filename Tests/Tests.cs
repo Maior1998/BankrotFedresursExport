@@ -39,9 +39,9 @@ namespace Tests
             }
 
         }
-        [TestCase(2021, 3, 1,ExpectedResult = 727)]
-        [TestCase(2020, 12, 10, ExpectedResult = 696)]
-        [TestCase(2021, 2, 23, ExpectedResult = 163)]
+        [TestCase(2021, 3, 1,ExpectedResult = 723)]
+        [TestCase(2020, 12, 10, ExpectedResult = 694)]
+        [TestCase(2021, 2, 23, ExpectedResult = 162)]
         public int TestGetMessages(int year, int month, int day)
         {
             DebtorMessageType[] type = { BankrotClient.SupportedMessageTypes.First(x => x.Id == 19) };
@@ -79,25 +79,8 @@ namespace Tests
 
             MemoryStream memoryStreamExcel = BankrotClient.ExportMessagesToExcel(mess);
             ExcelPackage excelFile = new(memoryStreamExcel);
-            string buf = (excelFile.Workbook.Worksheets.First().Cells[indexRow, 4].Text);
+            string buf = excelFile.Workbook.Worksheets.First().Cells[indexRow, 4].Text;
             return buf;
-        }
-        [Test]
-        public void Test()
-        {
-            ExcelPackage excelFile = new(new FileInfo("C:\\Users\\aidan\\Desktop\\test.xlsx"));
-            ExcelWorksheet worksheet = excelFile.Workbook.Worksheets["Лист1"];
-            ExcelCellAddress start = worksheet.Dimension.Start;
-            ExcelCellAddress end = worksheet.Dimension.End;
-            int count = 0;
-            for (int i = start.Row; i <= end.Row; i++)
-            {
-                object cellValue = worksheet.Cells[i, 2].Text;
-                if (cellValue.ToString() == "Сообщение о судебном акте (аннулировано)")
-                    count++;
-            }
-            Assert.AreEqual("Сообщение о судебном акте", worksheet.Cells["B2"]);
-            Assert.AreEqual(3, count);
         }
     }
 }
