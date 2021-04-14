@@ -55,10 +55,7 @@ namespace Tests
             DateTime start = new(2021, 3, 13);
             DateTime end = new(2021, 3, 12);
             DebtorMessageType[] type = { BankrotClient.SupportedMessageTypes.First(x => x.Id == 19) };
-            Exception ex = Assert.Throws<Exception>(() => BankrotClient.GetMessages(start, end, type));
-
-            Assert.That(ex.Message == "ƒата конца поиска не может быть раньше даты начала!");
-
+            Assert.Throws<NegativeIntervalLengthException>(() => BankrotClient.GetMessages(start, end, type));
         }
         [Test]
         public void TestInputInvalidInterval()
@@ -66,8 +63,7 @@ namespace Tests
             DateTime start = new(2021, 1, 13);
             DateTime end = new(2021, 3, 12);
             DebtorMessageType[] type = { BankrotClient.SupportedMessageTypes.First(x => x.Id == 19) };
-            InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => BankrotClient.GetMessages(start, end, type));
-            Assert.That(ex.Message == "ћаксимальна€ длина интервала - 30 дней!");
+            Assert.Throws<TooLongIntervalLengthException>(() => BankrotClient.GetMessages(start, end, type));
         }
 
         [TestCase(2, ExpectedResult = "09.09.1958")]

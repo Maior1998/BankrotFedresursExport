@@ -23,7 +23,7 @@ namespace BankruptFedresursClient
     {
         private const string NotFoundString =
             "По заданным критериям не найдено ни одной записи. Уточните критерии поиска";
-        private static CancellationToken cancellationToken = new();
+        private static CancellationToken cancellationToken;
         private static Cookie sessionCookie;
         private static bool isLoading;
         private const string UserAgent =
@@ -94,11 +94,11 @@ namespace BankruptFedresursClient
             isLoading = true;
             if (end < start)
             {
-                throw new Exception("Дата конца поиска не может быть раньше даты начала!");
+                throw new NegativeIntervalLengthException("Дата конца поиска не может быть раньше даты начала!");
             }
             if ((end - start).Days > 30)
             {
-                throw new InvalidOperationException("Максимальная длина интервала - 30 дней!");
+                throw new TooLongIntervalLengthException("Максимальная длина интервала - 30 дней!");
             }
 
             StartDate = start;
@@ -191,22 +191,21 @@ namespace BankruptFedresursClient
         /// <summary>
         /// Массив (только для чтения) поддерживаемых типов вытаскиваемых сообщений.
         /// </summary>
-        public static readonly DebtorMessageType[] SupportedMessageTypes = new[]
-        {
-            new DebtorMessageType()
+        public static readonly DebtorMessageType[] SupportedMessageTypes = {
+            new()
             {
                 Id=19,
                 Name="Реализация имущества должника-банкрота"
             },
 
-            new DebtorMessageType()
+            new()
             {
                 Id=18,
                 Name="Реструктуризация долгов должника-банкрота"
             },
         };
-        private static Random rand = new();
-        private const string baseMessageViewUrl = @"https://bankrot.fedresurs.ru/MessageWindow.aspx?ID=";
+        private static readonly Random rand = new();
+        private const string BaseMessageViewUrl = @"https://bankrot.fedresurs.ru/MessageWindow.aspx?ID=";
         /// <summary>
         /// Производит заполнение даты рождения по коллекции должников при помощи указанного драйвера браузера.
         /// </summary>
@@ -239,7 +238,7 @@ namespace BankruptFedresursClient
         public static DateTime EndDate;
         public static ushort MessageId;
         public static ushort PageId;
-        private const string cookieStringTemplate =
+        private const string CookieStringTemplate =
             "MessageNumber=" +
             "&MessageType=ArbitralDecree" +
             "&MessageTypeText=%d0%a1%d0%be%d0%be%d0%b1%d1%89%d0%b5%d0%bd%d0%b8%d0%b5+%d0%be+%d1%81%d1%83%d0%b4%d0%b5%d0%b1%d0%bd%d0%be%d0%bc+%d0%b0%d0%ba%d1%82%d0%b5" +
@@ -258,7 +257,7 @@ namespace BankruptFedresursClient
             "&WithViolation=False";
 
         public static string CookieString => string.Format(
-            cookieStringTemplate,
+            CookieStringTemplate,
             StartDate.ToString("dd.MM.yyyy"),
             EndDate.ToString("dd.MM.yyyy"),
             MessageId,
@@ -277,7 +276,7 @@ namespace BankruptFedresursClient
 
         public static DateTime GetDebtorBirthDate(string messageGuid)
         {
-            HttpWebRequest request = WebRequest.CreateHttp($"{baseMessageViewUrl}{messageGuid}");
+            HttpWebRequest request = WebRequest.CreateHttp($"{BaseMessageViewUrl}{messageGuid}");
             request.UserAgent = UserAgent;
             request.Method = "POST";
             request.CookieContainer = new CookieContainer();
@@ -306,18 +305,18 @@ namespace BankruptFedresursClient
             ExcelPackage excelPackage = new();
             ExcelWorksheet sheet = excelPackage.Workbook.Worksheets.Add("Выгрузка сообщений");
 
-            for (int i = 0; i < columns.Length; i++)
+            for (int i = 0; i < Columns.Length; i++)
             {
-                sheet.Column(i + 1).Style.Numberformat.Format = columns[i].ColumnFormat;
-                sheet.Cells[1, i + 1].Value = columns[i].Header;
+                sheet.Column(i + 1).Style.Numberformat.Format = Columns[i].ColumnFormat;
+                sheet.Cells[1, i + 1].Value = Columns[i].Header;
                 sheet.Cells[1, i + 1].Style.Border.BorderAround(ExcelBorderStyle.Thick);
             }
             int currentRowIndex = 0;
             foreach (DebtorMessage message in messages)
             {
-                for (int currentColumnIndex = 0; currentColumnIndex < columns.Length; currentColumnIndex++)
+                for (int currentColumnIndex = 0; currentColumnIndex < Columns.Length; currentColumnIndex++)
                 {
-                    sheet.Cells[currentRowIndex + 2, currentColumnIndex + 1].Value = columns[currentColumnIndex].GetCellValueFromMessage(message);
+                    sheet.Cells[currentRowIndex + 2, currentColumnIndex + 1].Value = Columns[currentColumnIndex].GetCellValueFromMessage(message);
                 }
                 currentRowIndex++;
             }
@@ -335,8 +334,7 @@ namespace BankruptFedresursClient
         /// Список столбцов (только для чтения),
         /// которые будет обрабатывать алгоритм обработки сообщений.
         /// </summary>
-        private static readonly DebtorMessageExcelExportColumn[] columns = new DebtorMessageExcelExportColumn[]
-        {
+        private static readonly DebtorMessageExcelExportColumn[] Columns = {
             new(
                 "Дата публикации (МСК)",
                 message => message.DatePublished,
@@ -382,11 +380,11 @@ namespace BankruptFedresursClient
             /// <summary>
             /// Формат столбца
             /// </summary>
-            public string ColumnFormat { get; set; }
+            public string ColumnFormat { get; }
             /// <summary>
             /// Заголовок столбца.
             /// </summary>
-            public string Header { get; private set; }
+            public string Header { get; }
             private Func<DebtorMessage, object> getCellValueFromMessage;
             /// <summary>
             /// Функция, которая вытаскивает значение данного столцба из сообщения по должнику.
@@ -408,9 +406,7 @@ namespace BankruptFedresursClient
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
         }
 
-        private static Regex dateRegex = new(@"(?<day>\d+)\.(?<month>\d+)\.(?<year>\d{4})");
         private static readonly Regex messagePageHrefRegex = new(@"/MessageWindow\.aspx\?ID=([A-Z0-9]+)");
-        private static readonly Regex datetimeRegex = new(@"(?<day>\d+)\.(?<month>\d+)\.(?<year>\d{4}) (?<hours>\d+):(?<minutes>\d+):(?<seconds>\d+)");
 
     }
 
