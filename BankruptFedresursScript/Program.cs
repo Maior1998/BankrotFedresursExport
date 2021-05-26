@@ -10,11 +10,18 @@ namespace BankruptFedresursScript
         static void Main(string[] args)
         {
             BankruptFedresursClient.BankrotClient.ProgressChanged += BankrotClient_ProgressChanged;
-            DateTime dateExport = DateTime.Today.AddDays(-1);
-            DebtorMessage[] messages = BankruptFedresursClient.BankrotClient.GetMessagesWithBirthDates(dateExport,
+            DateTime startDate = DateTime.Today.AddDays(-ScriptSettings.Settings.DateStartOffset);
+            DateTime endDate = DateTime.Today.AddDays(-ScriptSettings.Settings.DateEndOffset);
+            Console.WriteLine($"Начало выгрузки от {startDate:dd.MM.yyyy} до {endDate:dd.MM.yyyy}");
+            DebtorMessage[] messages = BankruptFedresursClient.BankrotClient.GetMessagesWithBirthDates(
+                startDate,
+                endDate,
                 BankruptFedresursClient.BankrotClient.SupportedMessageTypes);
             MemoryStream stream = BankruptFedresursClient.BankrotClient.ExportMessagesToExcel(messages);
-            File.WriteAllBytes($"Выгрузка сообщений от {DateTime.Now:dd.MM.yyyy HH mm ss}.xlsx", stream.ToArray());
+            File.WriteAllBytes(
+                Path.Combine(ScriptSettings.Settings.ExcelExportFilePath,
+                    $"Выгрузка сообщений от {DateTime.Now:dd.MM.yyyy HH mm ss} [{startDate:dd.MM.yyyy}-{endDate:dd.MM.yyyy}].xlsx"),
+                stream.ToArray());
         }
 
         private static void BankrotClient_ProgressChanged(BankruptFedresursClient.ExportStage obj)
